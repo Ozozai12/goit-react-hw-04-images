@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { useEffect } from 'react';
-import { Component } from 'react';
 import css from './Modal.module.css';
 
 export default function Modal({ closeModal, modalImage }) {
@@ -9,7 +7,7 @@ export default function Modal({ closeModal, modalImage }) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  });
 
   const handleKeyDown = event => {
     if (event.code === `Escape`) {
