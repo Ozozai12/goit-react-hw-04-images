@@ -1,4 +1,3 @@
-import { Component } from 'react';
 import { Searchbar } from './Searchbar/Searchbar';
 import axios from 'axios';
 import css from 'components/App.module.css';
@@ -6,98 +5,92 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
 import Modal from './Modal/Modal';
 import { ThreeDots } from 'react-loader-spinner';
+import { useState } from 'react';
+import { useEffect } from 'react';
 
 axios.defaults.baseURL = 'https://pixabay.com/api/';
 
-export class App extends Component {
-  state = {
-    gallery: [],
-    error: null,
-    query: '',
-    page: 1,
-    showModal: false,
-    modalImage: '',
-    totalHits: null,
-    status: 'idle',
+export function App() {
+  const [gallery, setGallery] = useState([]);
+  const [error, setError] = useState(null);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [modalImage, setModalImage] = useState('');
+  const [totalHits, setTotalHits] = useState(null);
+  const [status, setStatus] = useState('idle');
+
+  const toggleModal = () => {
+    setShowModal(!showModal);
   };
 
-  toggleModal = () => {
-    this.setState(prevState => ({ showModal: !prevState.showModal }));
+  const searchQuery = searchWord => {
+    setQuery(searchWord);
+    setGallery([]);
+    setPage(1);
   };
 
-  searchQuery = searchWord => {
-    this.setState({ query: searchWord, gallery: [], page: 1 });
+  const loadMore = () => {
+    setPage(page + 1);
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
-  };
-
-  async searchOnWord() {
+  const searchOnWord = async () => {
     try {
       const response = await axios.get(
-        `?key=29521336-a1469f4927f87a0f3197cf310&q=${this.state.query}&image_type=photo&orientation=horizontal&per_page=12&page=${this.state.page}`
+        `?key=29521336-a1469f4927f87a0f3197cf310&q=${query}&image_type=photo&orientation=horizontal&per_page=12&page=${page}`
       );
-      this.setState(prevState => ({
-        gallery: prevState.gallery.concat(response.data.hits),
-        totalHits: response.data.totalHits,
-      }));
-    } catch (error) {
-      this.setState({ error: 'Something went wrong, please reboot the page' });
-    } finally {
-      this.setState({ status: 'resolved' });
-    }
-  }
 
-  componentDidUpdate = (_, prevState) => {
-    if (
-      prevState.page !== this.state.page ||
-      prevState.query !== this.state.query
-    ) {
-      this.setState({ status: 'pending' });
-      this.searchOnWord();
+      setGallery(gallery.concat(response.data.hits));
+      setTotalHits(response.data.totalHits);
+    } catch (error) {
+      setError('Something went wrong, please reboot the page');
+    } finally {
+      setStatus('resolved');
     }
-    if (prevState.status === 'pending' && this.state.page !== 1) {
+  };
+
+  useEffect(() => {
+    if (query === '') {
+      return;
+    }
+    setStatus('pending');
+    searchOnWord();
+  }, [query, page]);
+
+  useEffect(() => {
+    if (status !== 'pending' && page !== 1) {
       window.scrollBy({
         top: 630,
         behavior: 'smooth',
       });
     }
-  };
+  }, [status, page]);
 
-  onImageClick = event => {
-    const openImage = this.state.gallery.find(image => {
-      console.log(image);
+  const onImageClick = event => {
+    const openImage = gallery.find(image => {
       return image.webformatURL === event.currentTarget.src;
     }).largeImageURL;
 
-    this.setState({
-      modalImage: openImage,
-      showModal: true,
-    });
+    setModalImage(openImage);
+    setShowModal(true);
   };
 
-  render() {
-    const { error, gallery, modalImage, totalHits, status } = this.state;
-    return (
-      <div className={css.App}>
-        <Searchbar onSubmit={this.searchQuery} />
-        {error && <h2 className={css.Error}>{error}</h2>}
+  return (
+    <div className={css.App}>
+      <Searchbar onSubmit={searchQuery} />
+      {error && <h2 className={css.Error}>{error}</h2>}
 
-        <ImageGallery photos={gallery} onClick={this.onImageClick} />
+      <ImageGallery photos={gallery} onClick={onImageClick} />
 
-        {status !== 'pending' &&
-          gallery.length > 0 &&
-          gallery.length !== totalHits && <Button onClick={this.loadMore} />}
-        {this.state.showModal && (
-          <Modal modalImage={modalImage} closeModal={this.toggleModal} />
-        )}
-        {status === 'pending' && (
-          <div className={css.Loader}>
-            <ThreeDots height="80" width="80" radius="9" color="#3f51b5" />
-          </div>
-        )}
-      </div>
-    );
-  }
+      {status !== 'pending' &&
+        gallery.length > 0 &&
+        gallery.length !== totalHits && <Button onClick={loadMore} />}
+      {showModal && <Modal modalImage={modalImage} closeModal={toggleModal} />}
+      {status === 'pending' && (
+        <div className={css.Loader}>
+          <ThreeDots height="80" width="80" radius="9" color="#3f51b5" />
+        </div>
+      )}
+    </div>
+  );
 }
