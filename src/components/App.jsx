@@ -55,7 +55,7 @@ export function App() {
     }
     setStatus('pending');
     searchOnWord();
-  }, [query, page]);
+  }, [query]);
 
   useEffect(() => {
     if (status !== 'pending' && page !== 1) {
