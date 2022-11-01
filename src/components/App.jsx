@@ -31,31 +31,32 @@ export function App() {
   };
 
   const loadMore = () => {
-    setPage(page + 1);
-  };
-
-  const searchOnWord = async () => {
-    try {
-      const response = await axios.get(
-        `?key=29521336-a1469f4927f87a0f3197cf310&q=${query}&image_type=photo&orientation=horizontal&per_page=12&page=${page}`
-      );
-
-      setGallery(gallery.concat(response.data.hits));
-      setTotalHits(response.data.totalHits);
-    } catch (error) {
-      setError('Something went wrong, please reboot the page');
-    } finally {
-      setStatus('resolved');
-    }
+    setPage(prevPage => prevPage + 1);
   };
 
   useEffect(() => {
     if (query === '') {
       return;
     }
+
+    const searchOnWord = async () => {
+      try {
+        const response = await axios.get(
+          `?key=29521336-a1469f4927f87a0f3197cf310&q=${query}&image_type=photo&orientation=horizontal&per_page=12&page=${page}`
+        );
+
+        setGallery(prevGallery => [...prevGallery, ...response.data.hits]);
+        setTotalHits(response.data.totalHits);
+      } catch (error) {
+        setError('Something went wrong, please reboot the page');
+      } finally {
+        setStatus('resolved');
+      }
+    };
+
     setStatus('pending');
     searchOnWord();
-  }, [query]);
+  }, [query, page]);
 
   useEffect(() => {
     if (status !== 'pending' && page !== 1) {
